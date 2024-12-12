@@ -15,31 +15,70 @@
  */
 
 class BowlingScoreTracker {
+    static MAX_FRAMES = 10;
+
     constructor() {
-        
+        this.frames = [new Frame()];
     }
 
-    score() {
+    score(...rolls) {
+        for (let roll of rolls)
+            this.processRoll(roll);
+    }
 
+    processRoll(roll) {
+        this.applyBonuses(roll);
+        const frame = this.frames[this.currentFrame - 1];
+        frame.processRoll(roll);
+        if (frame.rollsRemaining === 0 && this.frames.length < 10) {
+            this.frames.push(new Frame());
+        }
+    }
+
+    applyBonuses(roll) {
+        const framesWithPendingBonus = this.frames.filter(frame => frame.bonusRolls);
+        for (let frame of framesWithPendingBonus) {
+            frame.applyBonus(roll);
+        }
     }
 
     clear() {
+        this.frames = [new Frame()];
     }
 
     get totalScore () {
-
+        return this.frames.reduce((acc, curr) => acc + curr.score, 0);
     }
 
     get currentFrame () {
+        return this.frames.length;
+    }
+}
 
+class Frame {
+    constructor() {
+        this.rollsRemaining = 2;
+        this.bonusRolls = 0;
+        this.pins = 10;
+        this.score = 0;
     }
 
-    isSpare(index) {
+    processRoll(roll) {
+        // avoid continuing to add points to the last frame after game over
+        if (this.rollsRemaining === 0) return;
 
+        this.pins -= roll;
+        this.score += roll;
+        this.rollsRemaining--;
+        if (this.pins === 0) {
+            this.bonusRolls = this.rollsRemaining ? 2 : 1;
+            this.rollsRemaining = 0;
+        }
     }
 
-    isEndOfFrame(index) {
-
+    applyBonus(roll) {
+        this.score += roll;
+        this.bonusRolls--;
     }
 }
 
